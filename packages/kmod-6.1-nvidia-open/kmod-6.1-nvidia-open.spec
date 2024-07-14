@@ -7,6 +7,7 @@ URL: https://awsdocs-neuron.readthedocs-hosted.com/en/latest/
 
 Source0: https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/%{version}.tar.gz
 Patch0001: 0001-Add-cross-compile-to-args.patch
+Patch0002: 0002-Force-no-atomics-for-aarch64.patch
 
 BuildRequires: %{_cross_os}glibc-devel
 BuildRequires: %{_cross_os}kernel-6.1-archive
@@ -34,14 +35,16 @@ export OBJCOPY=%{_cross_target}-objcopy
 pushd %{_builddir}/%{nvidia_sources}
 mkdir -p %{nvidia_sources}/build
 make \
+  %{?_smp_mflags} \
   SYSSRC=%{kernel_sources} \
   CC=%{_cross_target}-gcc \
   LD=%{_cross_target}-ld \
   AR=%{_cross_target}-ar \
   CXX=%{_cross_target}-g++ \
   OBJCOPY=%{_cross_target}-objcopy \
-  ARCH="%{_cross_karch}" \
+  TARGET_ARCH="%{_cross_karch}" \
   CROSS_COMPILE=%{_cross_target}- \
+  NV_VERBOSE=1 \
   modules \
   %{nil}
 

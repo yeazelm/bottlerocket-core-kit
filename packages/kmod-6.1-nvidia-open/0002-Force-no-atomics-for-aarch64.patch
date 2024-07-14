@@ -1,0 +1,39 @@
+From 3ea1f3e1f2a1981bda1b7b3338fef0c756f79320 Mon Sep 17 00:00:00 2001
+From: Matthew Yeazel <yeazelm@amazon.com>
+Date: Sun, 14 Jul 2024 22:45:38 +0000
+Subject: [PATCH] Force no atomics for aarch64
+
+---
+ kernel-open/Kbuild  | 2 +-
+ src/nvidia/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/open-gpu-kernel-modules-535.183.01/kernel-open/Kbuild b/open-gpu-kernel-modules-535.183.01/kernel-open/Kbuild
+index 3e80720..36eecf3 100644
+--- a/open-gpu-kernel-modules-535.183.01/kernel-open/Kbuild
++++ b/open-gpu-kernel-modules-535.183.01/kernel-open/Kbuild
+@@ -99,7 +99,7 @@ EXTRA_CFLAGS += -ffreestanding
+ 
+ ifeq ($(ARCH),arm64)
+  EXTRA_CFLAGS += -mgeneral-regs-only -march=armv8-a
+- EXTRA_CFLAGS += $(call cc-option,-mno-outline-atomics,)
++ EXTRA_CFLAGS += -mno-outline-atomics
+ endif
+ 
+ ifeq ($(ARCH),x86_64)
+diff --git a/open-gpu-kernel-modules-535.183.01/src/nvidia/Makefile b/open-gpu-kernel-modules-535.183.01/src/nvidia/Makefile
+index e5e2374..14af040 100644
+--- a/open-gpu-kernel-modules-535.183.01/src/nvidia/Makefile
++++ b/open-gpu-kernel-modules-535.183.01/src/nvidia/Makefile
+@@ -92,7 +92,7 @@ ifeq ($(TARGET_ARCH),aarch64)
+   CFLAGS += -march=armv8-a
+   CFLAGS += -mstrict-align
+   CFLAGS += -ffixed-x18
+-  CONDITIONAL_CFLAGS += $(call TEST_CC_ARG, -mno-outline-atomics)
++  CFLAGS += -mno-outline-atomics
+ endif
+ 
+ CFLAGS += -fno-pic
+-- 
+2.45.0
+

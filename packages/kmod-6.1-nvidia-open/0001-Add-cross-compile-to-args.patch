@@ -1,0 +1,24 @@
+From aed1a6b87b5a13664ecd70caf176c598410303e9 Mon Sep 17 00:00:00 2001
+From: Matthew Yeazel <yeazelm@amazon.com>
+Date: Sat, 13 Jul 2024 23:27:45 +0000
+Subject: [PATCH] Add cross compile to args
+
+---
+ kernel-open/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/open-gpu-kernel-modules-535.183.01/kernel-open/Makefile b/open-gpu-kernel-modules-535.183.01/kernel-open/Makefile
+index e0ed5e9..d60c393 100644
+--- a/open-gpu-kernel-modules-535.183.01/kernel-open/Makefile
++++ b/open-gpu-kernel-modules-535.183.01/kernel-open/Makefile
+@@ -76,6 +76,7 @@ else
+   KBUILD_PARAMS += NV_KERNEL_MODULES="$(NV_KERNEL_MODULES)"
+   KBUILD_PARAMS += INSTALL_MOD_DIR=kernel/drivers/video
+   KBUILD_PARAMS += NV_SPECTRE_V2=$(SPECTRE_V2_RETPOLINE)
++  KBUILD_PARAMS += CROSS_COMPILE=$(CROSS_COMPILE)
+ 
+   .PHONY: modules module clean clean_conftest modules_install
+   modules clean modules_install:
+-- 
+2.45.0
+

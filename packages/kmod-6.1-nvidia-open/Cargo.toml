@@ -1,0 +1,21 @@
+[package]
+name = "kmod-6_1-nvidia-open"
+version = "0.1.0"
+edition = "2021"
+publish = false
+build = "../build.rs"
+
+[lib]
+path = "../packages.rs"
+
+[package.metadata.build-package]
+package-name = "kmod-6.1-nvidia-open"
+releases-url = "https://github.com/NVIDIA/open-gpu-kernel-modules/releases"
+
+[[package.metadata.build-package.external-files]]
+url = "https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/535.183.01.tar.gz"
+sha512 = "e851279289d2766e3e5d49793d69fde6fc7061c32c759798abe75487c71f6726ed8b683ed696486e203cb3b163540caa113f71ada67dedc509071f46326f2158"
+
+[build-dependencies]
+glibc = { path = "../glibc" }
+kernel-6_1 = { path = "../kernel-6.1" }

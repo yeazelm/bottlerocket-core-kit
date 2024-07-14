@@ -95,6 +95,7 @@ dependencies = [
  "kmod-5_15-nvidia",
  "kmod-6_1-neuron",
  "kmod-6_1-nvidia",
+ "kmod-6_1-nvidia-open",
  "kubernetes-1_23",
  "kubernetes-1_24",
  "kubernetes-1_25",
@@ -459,6 +460,14 @@ dependencies = [
 
 [[package]]
 name = "kmod-6_1-nvidia"
+version = "0.1.0"
+dependencies = [
+ "glibc",
+ "kernel-6_1",
+]
+
+[[package]]
+name = "kmod-6_1-nvidia-open"
 version = "0.1.0"
 dependencies = [
  "glibc",

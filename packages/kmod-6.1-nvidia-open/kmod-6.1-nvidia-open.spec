@@ -37,14 +37,8 @@ mkdir -p %{nvidia_sources}/build
 make \
   %{?_smp_mflags} \
   SYSSRC=%{kernel_sources} \
-  CC=%{_cross_target}-gcc \
-  LD=%{_cross_target}-ld \
-  AR=%{_cross_target}-ar \
-  CXX=%{_cross_target}-g++ \
-  OBJCOPY=%{_cross_target}-objcopy \
   TARGET_ARCH="%{_cross_karch}" \
   CROSS_COMPILE=%{_cross_target}- \
-  NV_VERBOSE=1 \
   modules \
   %{nil}
 

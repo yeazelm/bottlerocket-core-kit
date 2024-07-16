@@ -88,7 +88,7 @@ install -p -m 0644 %{S:2} .
 tar -xf %{_cross_datadir}/bottlerocket/kernel-devel.tar.xz
 
 %build
-pushd NVIDIA-Linux-%{_cross_arch}-%{tesla_ver}/kernel
+pushd NVIDIA-Linux-%{_cross_arch}-%{tesla_ver}/kernel-open
 
 # This recipe was based in the NVIDIA yum/dnf specs:
 # https://github.com/NVIDIA/yum-packaging-precompiled-kmod
@@ -159,26 +159,26 @@ sed -e 's|__LIBDIR__|%{_cross_libdir}|' %{S:303} > nvidia-tesla.conf
 install -m 0644 nvidia-tesla.conf %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/ld.so.conf.d/
 
 # driver
-install kernel/nvidia.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia/nv-interface.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia/nv-kernel.o_binary %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d/nv-kernel.o
+install kernel-open/nvidia.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia/nv-interface.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia/nv-kernel.o_binary %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d/nv-kernel.o
 
 # uvm
-install kernel/nvidia-uvm.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia-uvm.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-uvm.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-uvm.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
 
 # modeset
-install kernel/nvidia-modeset.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia-modeset/nv-modeset-interface.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia-modeset/nv-modeset-kernel.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-modeset.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-modeset/nv-modeset-interface.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-modeset/nv-modeset-kernel.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
 
 # peermem
-install kernel/nvidia-peermem.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia-peermem/nvidia-peermem.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-peermem.mod.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-peermem/nvidia-peermem.o %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
 
 # drm
-install kernel/nvidia-drm.mod.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-objects.d
-install kernel/nvidia-drm.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-drm.mod.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-objects.d
+install kernel-open/nvidia-drm.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-objects.d
 
 # Binaries
 install -m 755 nvidia-smi %{buildroot}%{_cross_libexecdir}/nvidia/tesla/bin

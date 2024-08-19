@@ -483,11 +483,11 @@ install -p -m 0644 \
   %{S:113} %{S:114} %{S:119} %{S:122} %{S:123} \
   %{buildroot}%{_cross_unitdir}
 
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:115} > link-kernel-modules.service
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:116} > load-kernel-modules.service
+sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:115} > link-kernel-modules@.service
+sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:116} > load-kernel-modules@.service
 install -p -m 0644 \
-  link-kernel-modules.service \
-  load-kernel-modules.service \
+  link-kernel-modules@.service \
+  load-kernel-modules@.service \
   %{buildroot}%{_cross_unitdir}
 
 install -p -m 0644 %{S:10} %{buildroot}%{_cross_templatedir}
@@ -618,8 +618,8 @@ install -p -m 0644 %{S:400} %{S:401} %{S:402} %{buildroot}%{_cross_licensedir}
 
 %files -n %{_cross_os}driverdog
 %{_cross_bindir}/driverdog
-%{_cross_unitdir}/link-kernel-modules.service
-%{_cross_unitdir}/load-kernel-modules.service
+%{_cross_unitdir}/link-kernel-modules@.service
+%{_cross_unitdir}/load-kernel-modules@.service
 
 %files -n %{_cross_os}pluto
 %{_cross_bindir}/pluto

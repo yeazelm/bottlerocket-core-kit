@@ -1,0 +1,71 @@
+{
+    "open-gpu": [
+        {
+            "devid": "0x1E02",
+            "name": "NVIDIA TITAN RTX",
+            "features": [
+                "dpycbcr420",
+                "dpgsynccompatible",
+                "hdmi4k60rgb444",
+                "hdmigsynccompatible",
+                "runtimepm",
+                "vdpaufeaturesetJ",
+                "kernelopen"
+            ]
+        },
+        {
+            "devid": "0x1E04",
+            "name": "NVIDIA GeForce RTX 2080 Ti",
+            "features": [
+                "dpycbcr420",
+                "dpgsynccompatible",
+                "hdmi4k60rgb444",
+                "hdmigsynccompatible",
+                "runtimepm",
+                "vdpaufeaturesetJ",
+                "kernelopen"
+            ]
+        },
+        {
+            "devid": "0x1E07",
+            "name": "NVIDIA GeForce RTX 2080 Ti",
+            "features": [
+                "dpycbcr420",
+                "dpgsynccompatible",
+                "hdmi4k60rgb444",
+                "hdmigsynccompatible",
+                "runtimepm",
+                "vdpaufeaturesetJ",
+                "kernelopen"
+            ]
+        },
+        {
+            "devid": "0x1E30",
+            "name": "Quadro RTX 6000",
+            "features": [
+                "dpycbcr420",
+                "dpgsynccompatible",
+                "hdmi4k60rgb444",
+                "hdmigsynccompatible",
+                "runtimepm",
+                "vdpaufeaturesetJ",
+                "kernelopen"
+            ]
+        },
+        {
+            "devid": "0x1E30",
+            "subdevid": "0x129E",
+            "subvendorid": "0x1028",
+            "name": "Quadro RTX 8000",
+            "features": [
+                "dpycbcr420",
+                "dpgsynccompatible",
+                "hdmi4k60rgb444",
+                "hdmigsynccompatible",
+                "runtimepm",
+                "vdpaufeaturesetJ",
+                "kernelopen"
+            ]
+        }
+    ]
+}

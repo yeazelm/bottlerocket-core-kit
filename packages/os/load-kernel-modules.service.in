@@ -10,7 +10,7 @@ RefuseManualStop=true
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/driverdog load-modules
+ExecStart=/usr/bin/driverdog --modules-set %I load-modules
 RemainAfterExit=true
 StandardError=journal+console
 

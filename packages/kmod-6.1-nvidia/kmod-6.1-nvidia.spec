@@ -278,7 +278,7 @@ install -d %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 install -p -m 0644 firmware/gsp_ga10x.bin %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 install -p -m 0644 firmware/gsp_tu10x.bin %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 
-install -p -m 0644 supported-gpus/open-gpu-supported-devices.json %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/nvidia/open-gpu-supported-devices.json
+install -p -m 0644 supported-gpus/open-gpu-supported-devices.json %{buildroot}%{_cross_datadir}/nvidia/open-gpu-supported-devices.json
 install -d %{buildroot}%{_cross_udevrulesdir}
 install -p -m 0644 %{S:205} %{buildroot}%{_cross_udevrulesdir}/40-nvidia-gpu-driver-select.rules
 popd
@@ -455,7 +455,7 @@ popd
 %{_cross_libdir}/firmware/nvidia/%{tesla_ver}/gsp_tu10x.bin
 
 # Open GPU drivers supported devices file
-%{_cross_factorydir}%{_cross_sysconfdir}/nvidia/open-gpu-supported-devices.json
+%{_cross_datadir}/nvidia/open-gpu-supported-devices.json
 %{_cross_udevrulesdir}/40-nvidia-gpu-driver-select.rules
 
 # Neither nvidia-peermem nor nvidia-drm are included in driver container images, we exclude them

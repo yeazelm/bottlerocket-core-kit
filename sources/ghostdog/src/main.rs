@@ -21,7 +21,7 @@ use std::str::FromStr;
 
 const NVME_CLI_PATH: &str = "/sbin/nvme";
 const NVME_IDENTIFY_DATA_SIZE: usize = 4096;
-const OPEN_GPU_SUPPORTED_DEVICES_PATH: &str = "/etc/nvidia/open-gpu-supported-devices.json";
+const OPEN_GPU_SUPPORTED_DEVICES_PATH: &str = "/usr/share/nvidia/open-gpu-supported-devices.json";
 
 #[derive(FromArgs, PartialEq, Debug)]
 /// Manage ephemeral disks.
@@ -135,10 +135,7 @@ fn run() -> Result<()> {
             if vendor.vendor == "0x10de" {
                 let pci_id = env::var("PCI_ID").context(error::MissingPciIdEnvSnafu)?;
                 let driver_choice = find_preferred_driver(pci_id)?;
-                println!(
-                    "ENV{{SYSTEMD_WANTS}}=\"load-kernel-modules@{}.service\"",
-                    driver_choice
-                );
+                println!("BOTTLEROCKET_NVIDIA_DRIVER={}", driver_choice);
             } else {
                 let _ = writeln!(&mut f, "Argument passed: {}", vendor.vendor);
             }
@@ -241,7 +238,7 @@ fn find_preferred_driver(pci_id: String) -> Result<String> {
     }
 
     // let (vendor_id, device_id): (String, String) = pci_id.split(":").into();
-    return Ok("nvidia-telsa".to_string());
+    return Ok("nvidia-tesla".to_string());
 }
 
 /// Print the device type in the environment key format udev expects.

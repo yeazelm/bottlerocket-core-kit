@@ -1,3 +1,11 @@
 # For any NVIDIA devices, ask ghostdog to select the right driver
-SUBSYSTEM=="pci" OPTIONS="log_level=debug"
-SUBSYSTEM=="pci", ATTR{vendor}=="0x10de" IMPORT{program}=="/usr/bin/ghostdog match-nvidia-driver %s{vendor}" TAG+="systemd"
+SUBSYSTEM=="pci", OPTIONS="log_level=debug"
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", IMPORT{program}=="/usr/bin/ghostdog match-nvidia-driver %s{vendor}"
+
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{BOTTLEROCKET_NVIDIA_DRIVER}=="nvidia-open-gpu", GOTO="nvidia_open_gpu"
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-kernel-modules@nvidia-tesla.service", TAG+="systemd", GOTO="nvidia_end"
+
+LABEL="nvidia_open_gpu"
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-kernel-modules@nvidia-open-gpu.service", TAG+="systemd"
+
+LABEL="nvidia_end"

@@ -15,6 +15,7 @@ use std::env;
 use std::fs;
 use std::io::Write;
 use std::io::{Read, Seek};
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
@@ -135,6 +136,10 @@ fn run() -> Result<()> {
             if vendor.vendor == "0x10de" {
                 let pci_id = env::var("PCI_ID").context(error::MissingPciIdEnvSnafu)?;
                 let driver_choice = find_preferred_driver(pci_id)?;
+                let marker_path: PathBuf = Path::new("/run").join(driver_choice.clone());
+                fs::write(marker_path.clone(), "").context(error::WriteMarkerFileSnafu {
+                    path: marker_path.clone(),
+                })?;
                 println!("BOTTLEROCKET_NVIDIA_DRIVER={}", driver_choice);
             } else {
                 let _ = writeln!(&mut f, "Argument passed: {}", vendor.vendor);
@@ -317,6 +322,11 @@ mod error {
         InvalidPciId { input: String },
         #[snafu(display("Unable to read PCI_ID provided: `{}`: {}", pci_id, message))]
         ParsePciId { pci_id: String, message: String },
+        #[snafu(display("Failed to write '{}': {}", path.display(), source))]
+        WriteMarkerFile {
+            path: std::path::PathBuf,
+            source: std::io::Error,
+        },
     }
 }
 

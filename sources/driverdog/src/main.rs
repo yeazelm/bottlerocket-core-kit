@@ -292,11 +292,11 @@ fn load_modules_sets(
             .get(&target)
             .context(error::MissingModuleSetSnafu { target })?;
         load_modules(driver_config)?
-    }
-    // Is this a bug? We always iterate over the module_sets even if a target is requested
-    // Load all the modules sets if no target module was given
-    for driver_config in modules_sets.values() {
-        load_modules(driver_config)?;
+    } else {
+        // Load all the modules sets if no target module was given
+        for driver_config in modules_sets.values() {
+            load_modules(driver_config)?;
+        }
     }
 
     Ok(())

@@ -1,8 +1,6 @@
 [Unit]
 Description=Link additional kernel modules
 RequiresMountsFor=PREFIX/lib/modules PREFIX/src/kernels
-Conflicts=link-open-gpu-kernel-modules.service
-ConditionPathExists=/run/nvidia-tesla
 # Rerunning this service after the system is fully loaded will override
 # the already linked kernel modules. This doesn't affect the running system,
 # since kernel modules are linked early in the boot sequence, but we still
@@ -16,5 +14,6 @@ ExecStart=/usr/bin/driverdog --modules-set nvidia-tesla link-modules
 RemainAfterExit=true
 StandardError=journal+console
 
-[Install]
-RequiredBy=preconfigured.target
+# trying to see if the path can bring this in
+#[Install]
+#WantedBy=preconfigured.target

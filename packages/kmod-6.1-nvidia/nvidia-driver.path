@@ -1,6 +1,5 @@
 [Unit]
-Description=Link additional kernel modules
-RequiresMountsFor=PREFIX/lib/modules PREFIX/src/kernels
+Description=Monitor for path to confirm NVIDIA drivers are loaded
 # Rerunning this service after the system is fully loaded will override
 # the already linked kernel modules. This doesn't affect the running system,
 # since kernel modules are linked early in the boot sequence, but we still
@@ -8,12 +7,10 @@ RequiresMountsFor=PREFIX/lib/modules PREFIX/src/kernels
 RefuseManualStart=true
 RefuseManualStop=true
 
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/driverdog --modules-set nvidia-open-gpu link-modules
-RemainAfterExit=true
-StandardError=journal+console
+[Path]
+# A good path that will always be there is the nvidiactl in /dev since its loaded by NVIDIA CTK after the driver
+PathExists=/dev/nvidiactl
+Unit=load-open-gpu-kernel-modules.service
 
-# trying to see if the path can bring this in
-#[Install]
-#WantedBy=preconfigured.target
+[Install]
+RequiredBy=preconfigured.target

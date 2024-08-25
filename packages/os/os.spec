@@ -54,6 +54,8 @@ Source122: has-boot-ever-succeeded.service
 Source123: pluto.service
 Source124: link-tesla-kernel-modules.service.in
 Source125: load-tesla-kernel-modules.service.in
+Source126: load-tesla-kernel-modules.path
+Source127: load-open-gpu-kernel-modules.path
 
 # 2xx sources: tmpfilesd configs
 Source200: migration-tmpfiles.conf
@@ -499,6 +501,9 @@ install -p -m 0644 \
   load-open-gpu-kernel-modules.service \
   %{buildroot}%{_cross_unitdir}
 
+install -p -m 0644 %{S:126} %{buildroot}%{_cross_unitdir}
+install -p -m 0644 %{S:127} %{buildroot}%{_cross_unitdir}
+
 install -p -m 0644 %{S:10} %{buildroot}%{_cross_templatedir}
 install -p -m 0644 %{S:120} %{buildroot}%{_cross_unitdir}
 
@@ -631,6 +636,8 @@ install -p -m 0644 %{S:400} %{S:401} %{S:402} %{buildroot}%{_cross_licensedir}
 %{_cross_unitdir}/load-open-gpu-kernel-modules.service
 %{_cross_unitdir}/link-tesla-kernel-modules.service
 %{_cross_unitdir}/load-tesla-kernel-modules.service
+%{_cross_unitdir}/load-tesla-kernel-modules.path
+%{_cross_unitdir}/load-open-gpu-kernel-modules.path
 
 %files -n %{_cross_os}pluto
 %{_cross_bindir}/pluto

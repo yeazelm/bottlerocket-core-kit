@@ -22,6 +22,8 @@ use std::str::FromStr;
 
 const NVME_CLI_PATH: &str = "/sbin/nvme";
 const NVME_IDENTIFY_DATA_SIZE: usize = 4096;
+const NVIDIA_VENDOR_ID: &str = "0x10de";
+const NVIDIA_RUN_DIR: &str = "/run/nvidia";
 const OPEN_GPU_SUPPORTED_DEVICES_PATH: &str = "/usr/share/nvidia/open-gpu-supported-devices.json";
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -133,10 +135,15 @@ fn run() -> Result<()> {
                 let _ = writeln!(&mut f, "{key}: {value}").context(error::FileWriteSnafu { path });
             }
 
-            if vendor.vendor == "0x10de" {
+            if vendor.vendor == NVIDIA_VENDOR_ID {
                 let pci_id = env::var("PCI_ID").context(error::MissingPciIdEnvSnafu)?;
                 let driver_choice = find_preferred_driver(pci_id)?;
-                let marker_path: PathBuf = Path::new("/run/").join(driver_choice.clone());
+                if !Path::new(NVIDIA_RUN_DIR).exists() {
+                    fs::create_dir_all(NVIDIA_RUN_DIR).context(error::CreateDirSnafu {
+                        path: NVIDIA_RUN_DIR,
+                    })?;
+                }
+                let marker_path: PathBuf = Path::new(NVIDIA_RUN_DIR).join(driver_choice.clone());
                 fs::write(marker_path.clone(), "").context(error::WriteMarkerFileSnafu {
                     path: marker_path.clone(),
                 })?;
@@ -324,6 +331,11 @@ mod error {
         ParsePciId { pci_id: String, message: String },
         #[snafu(display("Failed to write '{}': {}", path.display(), source))]
         WriteMarkerFile {
+            path: std::path::PathBuf,
+            source: std::io::Error,
+        },
+        #[snafu(display("Failed to make directory '{}': {}", path.display(), source))]
+        CreateDir {
             path: std::path::PathBuf,
             source: std::io::Error,
         },

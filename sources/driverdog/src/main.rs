@@ -282,6 +282,7 @@ fn load_modules_sets(
     target: Option<String>,
 ) -> Result<()> {
     // Update the modules.dep before we attempt to load kernel modules
+    // We need to confirm if there is a specific modules-set and if so, add a preference for that into depmod
     let args: Vec<String> = Vec::new();
     command(DEPMOD_BIN_PATH, args)?;
     info!("Updated modules dependencies");

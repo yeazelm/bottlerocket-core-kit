@@ -3,7 +3,7 @@ Description=Load additional kernel modules
 RequiresMountsFor=PREFIX/lib/modules PREFIX/src/kernels
 After=link-tesla-kernel-modules.service
 Requires=link-tesla-kernel-modules.service load-tesla-kernel-modules.path
-ConditionPathExists=/run/nvidia-tesla
+ConditionPathExists=/run/nvidia/nvidia-tesla
 # Disable manual restarts to prevent loading kernel modules
 # that weren't linked by the running system
 RefuseManualStart=true
@@ -14,7 +14,3 @@ Type=oneshot
 ExecStart=/usr/bin/driverdog --modules-set nvidia-tesla load-modules
 RemainAfterExit=true
 StandardError=journal+console
-
-# trying to see if the path can bring this in
-#[Install]
-#WantedBy=preconfigured.target

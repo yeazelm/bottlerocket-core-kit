@@ -8,7 +8,7 @@ RefuseManualStart=true
 RefuseManualStop=true
 
 [Path]
-PathExists=/run/nvidia-tesla
+PathExists=/run/nvidia/nvidia-tesla
 Unit=load-tesla-kernel-modules.service
 TriggerLimitIntervalSec=1s
 TriggerLimitBurst=0

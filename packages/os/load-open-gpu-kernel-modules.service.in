@@ -3,7 +3,7 @@ Description=Load additional kernel modules
 RequiresMountsFor=PREFIX/lib/modules PREFIX/src/kernels
 After=link-open-gpu-kernel-modules.service
 Requires=link-open-gpu-kernel-modules.service load-open-gpu-kernel-modules.path
-ConditionPathExists=/run/nvidia-open-gpu
+ConditionPathExists=/run/nvidia/nvidia-open-gpu
 # Disable manual restarts to prevent loading kernel modules
 # that weren't linked by the running system
 RefuseManualStart=true
@@ -15,6 +15,3 @@ ExecStart=/usr/bin/driverdog --modules-set nvidia-open-gpu load-modules
 RemainAfterExit=true
 StandardError=journal+console
 
-# trying to see if the path can bring this in
-#[Install]
-#WantedBy=preconfigured.target

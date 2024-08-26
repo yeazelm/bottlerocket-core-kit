@@ -8,4 +8,4 @@ RefuseManualStart=true
 RefuseManualStop=true
 
 [Install]
-RequiredBy=preconfigured.target
+WantedBy=preconfigured.target

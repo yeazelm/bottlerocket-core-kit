@@ -52,8 +52,8 @@ Source119: reboot-if-required.service
 Source120: warm-pool-wait.service
 Source122: has-boot-ever-succeeded.service
 Source123: pluto.service
-Source124: link-tesla-kernel-modules.service.in
-Source125: load-tesla-kernel-modules.service.in
+Source124: link-open-gpu-kernel-modules.service.in
+Source125: load-open-gpu-kernel-modules.service.in
 Source126: load-tesla-kernel-modules.path
 Source127: load-open-gpu-kernel-modules.path
 

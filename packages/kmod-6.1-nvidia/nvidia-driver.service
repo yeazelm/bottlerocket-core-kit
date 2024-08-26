@@ -15,4 +15,4 @@ Restart=on-failure
 StandardError=journal+console
 
 [Install]
-RequiredBy=preconfigured.target
+WantedBy=preconfigured.target

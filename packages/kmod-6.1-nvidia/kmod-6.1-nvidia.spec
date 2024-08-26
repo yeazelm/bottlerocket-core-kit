@@ -42,6 +42,7 @@ Source204: nvidia-fabricmanager.cfg
 Source205: 40-nvidia-gpu-driver-select.rules
 Source206: nvidia-driver.path
 Source207: nvidia-driver.service
+Source208: dev-nvidiactl.device
 
 # NVIDIA tesla conf files from 300 to 399
 Source300: nvidia-tesla-tmpfiles.conf
@@ -296,8 +297,8 @@ install -p -m 0644 %{S:205} %{buildroot}%{_cross_udevrulesdir}/40-nvidia-gpu-dri
 popd
 
 # Add path and service to confirm the driver is loaded
-install -p -m 0644 %{S:206} %{buildroot}%{_cross_unitdir}
-install -p -m 0644 %{S:207} %{buildroot}%{_cross_unitdir}
+# install -p -m 0644 %{S:206} %{buildroot}%{_cross_unitdir}
+install -p -m 0644 %{S:208} %{buildroot}%{_cross_unitdir}
 
 # Begin NVIDIA fabric manager binaries and topologies
 pushd fabricmanager-linux-%{fm_arch}-%{tesla_ver}-archive
@@ -321,8 +322,9 @@ popd
 %dir %{_cross_factorydir}%{_cross_sysconfdir}/nvidia
 %{_cross_tmpfilesdir}/nvidia.conf
 %{_cross_libdir}/modules-load.d/nvidia-dependencies.conf
-%{_cross_unitdir}/nvidia-driver.service
-%{_cross_unitdir}/nvidia-driver.path
+# %{_cross_unitdir}/nvidia-driver.service
+# %{_cross_unitdir}/nvidia-driver.path
+%{_cross_unitdir}/dev-nvidiactl.device
 
 %files tesla-%{tesla_major}
 %license NVidiaEULAforAWS.pdf

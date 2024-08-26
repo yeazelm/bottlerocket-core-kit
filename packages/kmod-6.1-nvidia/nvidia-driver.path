@@ -11,6 +11,8 @@ RefuseManualStop=true
 # A good path that will always be there is the nvidiactl in /dev since its loaded by NVIDIA CTK after the driver
 PathExists=/dev/nvidiactl
 Unit=load-open-gpu-kernel-modules.service
+TriggerLimitIntervalSec=1s
+TriggerLimitBurst=0
 
 [Install]
-RequiredBy=preconfigured.target
+WantedBy=preconfigured.target

@@ -136,7 +136,7 @@ fn run() -> Result<()> {
             if vendor.vendor == "0x10de" {
                 let pci_id = env::var("PCI_ID").context(error::MissingPciIdEnvSnafu)?;
                 let driver_choice = find_preferred_driver(pci_id)?;
-                let marker_path: PathBuf = Path::new("/run/nvidia/").join(driver_choice.clone());
+                let marker_path: PathBuf = Path::new("/run/").join(driver_choice.clone());
                 fs::write(marker_path.clone(), "").context(error::WriteMarkerFileSnafu {
                     path: marker_path.clone(),
                 })?;

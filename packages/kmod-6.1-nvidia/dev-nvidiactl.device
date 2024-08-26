@@ -1,17 +1,11 @@
 [Unit]
-Description=Monitor for path to start load additional kernel modules
+Description=Monitor for device to confirm NVIDIA drivers are loaded
 # Rerunning this service after the system is fully loaded will override
 # the already linked kernel modules. This doesn't affect the running system,
 # since kernel modules are linked early in the boot sequence, but we still
 # disable manual restarts to prevent unnecessary kernel modules rewrites.
 RefuseManualStart=true
 RefuseManualStop=true
-
-[Path]
-PathExists=/run/nvidia-tesla
-Unit=load-tesla-kernel-modules.service
-TriggerLimitIntervalSec=1s
-TriggerLimitBurst=0
 
 [Install]
 WantedBy=preconfigured.target

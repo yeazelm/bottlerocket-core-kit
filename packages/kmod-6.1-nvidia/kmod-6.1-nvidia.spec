@@ -40,16 +40,14 @@ Source202: nvidia-dependencies-modules-load.conf
 Source203: nvidia-fabricmanager.service
 Source204: nvidia-fabricmanager.cfg
 Source205: 40-nvidia-gpu-driver-select.rules
-Source206: nvidia-driver.path
-Source207: nvidia-driver.service
-Source208: dev-nvidiactl.device
+Source206: dev-nvidiactl.device
 
 # NVIDIA tesla conf files from 300 to 399
 Source300: nvidia-tesla-tmpfiles.conf
 Source301: nvidia-tesla-build-config.toml.in
-Source302: nvidia-tesla-path.env.in
-Source303: nvidia-ld.so.conf.in
-Source304: nvidia-open-gpu-load-config.toml.in
+Source302: nvidia-open-gpu-load-config.toml.in
+Source303: nvidia-tesla-path.env.in
+Source304: nvidia-ld.so.conf.in
 
 BuildRequires: %{_cross_os}glibc-devel
 BuildRequires: %{_cross_os}kernel-6.1-archive
@@ -198,19 +196,19 @@ install -d %{buildroot}%{_cross_factorydir}/nvidia/open-gpu
 install -m 0644 %{S:300} %{buildroot}%{_cross_tmpfilesdir}/nvidia-tesla.conf
 sed -e 's|__NVIDIA_MODULES__|%{_cross_datadir}/nvidia/tesla/module-objects.d/|' %{S:301} > \
   nvidia-tesla.toml
-sed -e 's|__NVIDIA_MODULES__|%{_cross_datadir}/nvidia/open-gpu/module-objects.d/|' %{S:304} > \
+sed -e 's|__NVIDIA_MODULES__|%{_cross_datadir}/nvidia/open-gpu/module-objects.d/|' %{S:302} > \
   nvidia-open-gpu.toml
 install -m 0644 nvidia-tesla.toml %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/drivers
 install -m 0644 nvidia-open-gpu.toml %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/drivers
 # Install nvidia-path environment file, will be used as a drop-in for containerd.service since
 # libnvidia-container locates and mounts helper binaries into the containers from either
 # `PATH` or `NVIDIA_PATH`
-sed -e 's|__NVIDIA_BINDIR__|%{_cross_libexecdir}/nvidia/tesla/bin|' %{S:302} > nvidia-path.env
+sed -e 's|__NVIDIA_BINDIR__|%{_cross_libexecdir}/nvidia/tesla/bin|' %{S:303} > nvidia-path.env
 install -m 0644 nvidia-path.env %{buildroot}%{_cross_factorydir}/nvidia/tesla
 # We need to add `_cross_libdir` to the paths loaded by the ldconfig service
 # because libnvidia-container uses the `ldcache` file created by the service, to locate and mount the
 # libraries into the containers
-sed -e 's|__LIBDIR__|%{_cross_libdir}|' %{S:303} > nvidia-tesla.conf
+sed -e 's|__LIBDIR__|%{_cross_libdir}|' %{S:304} > nvidia-tesla.conf
 install -m 0644 nvidia-tesla.conf %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/ld.so.conf.d/
 
 
@@ -239,6 +237,7 @@ install kernel/nvidia-drm.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-o
 # open driver
 # These won't go to the /module-objects.d but instead staight to the module cache (or somewhere to have them hiding in case pre-loading happens)
 # kernel/drivers/extra/video/nvidia/open-gpu - need to find the macro for kernel drivers dir
+# We can put a drop in for depmod that will prefer the open-gpu path over the tesla path (or vice versa) to ensure this works. Probably in driverdog
 install kernel-open/nvidia.mod.o %{buildroot}%{_cross_datadir}/nvidia/open-gpu/module-objects.d
 install kernel-open/nvidia/nv-interface.o %{buildroot}%{_cross_datadir}/nvidia/open-gpu/module-objects.d
 install kernel-open/nvidia/nv-kernel.o_binary %{buildroot}%{_cross_datadir}/nvidia/open-gpu/module-objects.d/nv-kernel.o
@@ -296,9 +295,8 @@ install -d %{buildroot}%{_cross_udevrulesdir}
 install -p -m 0644 %{S:205} %{buildroot}%{_cross_udevrulesdir}/40-nvidia-gpu-driver-select.rules
 popd
 
-# Add path and service to confirm the driver is loaded
-# install -p -m 0644 %{S:206} %{buildroot}%{_cross_unitdir}
-install -p -m 0644 %{S:208} %{buildroot}%{_cross_unitdir}
+# Add systemd device file to confirm driver is loaded
+install -p -m 0644 %{S:206} %{buildroot}%{_cross_unitdir}
 
 # Begin NVIDIA fabric manager binaries and topologies
 pushd fabricmanager-linux-%{fm_arch}-%{tesla_ver}-archive
@@ -322,8 +320,6 @@ popd
 %dir %{_cross_factorydir}%{_cross_sysconfdir}/nvidia
 %{_cross_tmpfilesdir}/nvidia.conf
 %{_cross_libdir}/modules-load.d/nvidia-dependencies.conf
-# %{_cross_unitdir}/nvidia-driver.service
-# %{_cross_unitdir}/nvidia-driver.path
 %{_cross_unitdir}/dev-nvidiactl.device
 
 %files tesla-%{tesla_major}

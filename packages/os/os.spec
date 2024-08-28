@@ -45,17 +45,19 @@ Source111: metricdog.service
 Source112: metricdog.timer
 Source113: send-boot-success.service
 Source114: bootstrap-containers@.service
-Source115: link-tesla-kernel-modules.service.in
-Source116: load-tesla-kernel-modules.service.in
+Source115: link-kernel-modules.service.in
+Source116: load-kernel-modules.service.in
+# Source115: link-tesla-kernel-modules.service.in
+# Source116: load-tesla-kernel-modules.service.in
 Source117: cfsignal.service
 Source119: reboot-if-required.service
 Source120: warm-pool-wait.service
 Source122: has-boot-ever-succeeded.service
 Source123: pluto.service
-Source124: link-open-gpu-kernel-modules.service.in
-Source125: load-open-gpu-kernel-modules.service.in
-Source126: load-tesla-kernel-modules.path
-Source127: load-open-gpu-kernel-modules.path
+# Source124: link-open-gpu-kernel-modules.service.in
+# Source125: load-open-gpu-kernel-modules.service.in
+# Source126: load-tesla-kernel-modules.path
+# Source127: load-open-gpu-kernel-modules.path
 
 # 2xx sources: tmpfilesd configs
 Source200: migration-tmpfiles.conf
@@ -487,22 +489,22 @@ install -p -m 0644 \
   %{S:113} %{S:114} %{S:119} %{S:122} %{S:123} \
   %{buildroot}%{_cross_unitdir}
 
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:115} > link-tesla-kernel-modules.service
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:116} > load-tesla-kernel-modules.service
+sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:115} > link-kernel-modules.service
+sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:116} > load-kernel-modules.service
 install -p -m 0644 \
-  link-tesla-kernel-modules.service \
-  load-tesla-kernel-modules.service \
+  link-kernel-modules.service \
+  load-kernel-modules.service \
   %{buildroot}%{_cross_unitdir}
 
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:124} > link-open-gpu-kernel-modules.service
-sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:125} > load-open-gpu-kernel-modules.service
-install -p -m 0644 \
-  link-open-gpu-kernel-modules.service \
-  load-open-gpu-kernel-modules.service \
-  %{buildroot}%{_cross_unitdir}
+# sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:124} > link-open-gpu-kernel-modules.service
+# sed -e 's|PREFIX|%{_cross_prefix}|g' %{S:125} > load-open-gpu-kernel-modules.service
+# install -p -m 0644 \
+#   link-open-gpu-kernel-modules.service \
+#   load-open-gpu-kernel-modules.service \
+#   %{buildroot}%{_cross_unitdir}
 
-install -p -m 0644 %{S:126} %{buildroot}%{_cross_unitdir}
-install -p -m 0644 %{S:127} %{buildroot}%{_cross_unitdir}
+# install -p -m 0644 %{S:126} %{buildroot}%{_cross_unitdir}
+# install -p -m 0644 %{S:127} %{buildroot}%{_cross_unitdir}
 
 install -p -m 0644 %{S:10} %{buildroot}%{_cross_templatedir}
 install -p -m 0644 %{S:120} %{buildroot}%{_cross_unitdir}
@@ -632,12 +634,14 @@ install -p -m 0644 %{S:400} %{S:401} %{S:402} %{buildroot}%{_cross_licensedir}
 
 %files -n %{_cross_os}driverdog
 %{_cross_bindir}/driverdog
-%{_cross_unitdir}/link-open-gpu-kernel-modules.service
-%{_cross_unitdir}/load-open-gpu-kernel-modules.service
-%{_cross_unitdir}/link-tesla-kernel-modules.service
-%{_cross_unitdir}/load-tesla-kernel-modules.service
-%{_cross_unitdir}/load-tesla-kernel-modules.path
-%{_cross_unitdir}/load-open-gpu-kernel-modules.path
+%{_cross_unitdir}/link-kernel-modules.service
+%{_cross_unitdir}/load-kernel-modules.service
+# %{_cross_unitdir}/link-open-gpu-kernel-modules.service
+# %{_cross_unitdir}/load-open-gpu-kernel-modules.service
+# %{_cross_unitdir}/link-tesla-kernel-modules.service
+# %{_cross_unitdir}/load-tesla-kernel-modules.service
+# %{_cross_unitdir}/load-tesla-kernel-modules.path
+# %{_cross_unitdir}/load-open-gpu-kernel-modules.path
 
 %files -n %{_cross_os}pluto
 %{_cross_bindir}/pluto

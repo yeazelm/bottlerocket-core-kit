@@ -1,0 +1,1 @@
+exclude __PREFIX__/lib/modules/__KERNEL_VERSION__/kernel/drivers/extra/video/nvidia/tesla

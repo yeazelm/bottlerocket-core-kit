@@ -24,6 +24,8 @@ const NVME_CLI_PATH: &str = "/sbin/nvme";
 const NVME_IDENTIFY_DATA_SIZE: usize = 4096;
 const NVIDIA_VENDOR_ID: &str = "0x10de";
 const NVIDIA_RUN_DIR: &str = "/run/nvidia";
+const DEFAULT_DRIVER_CONFIG_PATH: &str = "/etc/drivers/";
+const DRIVER_FACTORY_DIR: &str = "/usr/share/factory/etc/drivers/";
 const OPEN_GPU_SUPPORTED_DEVICES_PATH: &str = "/usr/share/nvidia/open-gpu-supported-devices.json";
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -147,6 +149,24 @@ fn run() -> Result<()> {
                 fs::write(marker_path.clone(), "").context(error::WriteMarkerFileSnafu {
                     path: marker_path.clone(),
                 })?;
+
+                if !Path::new(DEFAULT_DRIVER_CONFIG_PATH).exists() {
+                    fs::create_dir_all(DEFAULT_DRIVER_CONFIG_PATH).context(
+                        error::CreateDirSnafu {
+                            path: DEFAULT_DRIVER_CONFIG_PATH,
+                        },
+                    )?;
+                }
+                let source_driver_path =
+                    Path::new(DRIVER_FACTORY_DIR).join(format!("{}.toml", driver_choice.clone()));
+                let etc_driver_path = Path::new(DEFAULT_DRIVER_CONFIG_PATH)
+                    .join(format!("{}.toml", driver_choice.clone()));
+                fs::copy(source_driver_path.clone(), etc_driver_path.clone()).context(
+                    error::CopyFileSnafu {
+                        s: source_driver_path,
+                        d: etc_driver_path,
+                    },
+                )?;
                 println!("BOTTLEROCKET_NVIDIA_DRIVER={}", driver_choice);
             } else {
                 let _ = writeln!(&mut f, "Argument passed: {}", vendor.vendor);
@@ -337,6 +357,12 @@ mod error {
         #[snafu(display("Failed to make directory '{}': {}", path.display(), source))]
         CreateDir {
             path: std::path::PathBuf,
+            source: std::io::Error,
+        },
+        #[snafu(display("Failed to copy '{}' to '{}': {}", s.display(), d.display(), source))]
+        CopyFile {
+            s: std::path::PathBuf,
+            d: std::path::PathBuf,
             source: std::io::Error,
         },
     }

@@ -87,6 +87,8 @@ struct DriverConfig {
     kernel_modules: HashMap<String, Linkable>,
     #[serde(rename(deserialize = "object-files"))]
     object_files: HashMap<String, Linkable>,
+    #[serde(default, rename(deserialize = "load-only"))]
+    load_only: bool,
 }
 
 /// Holds the objects to be linked for the object/kernel module
@@ -109,11 +111,15 @@ fn link_modules_sets(
         let driver_config = modules_sets
             .get(&target)
             .context(error::MissingModuleSetSnafu { target })?;
-        link_modules(driver_config, &kernel_version)?;
+        if !driver_config.load_only {
+            link_modules(driver_config, &kernel_version)?;
+        }
     } else {
         // Link all the modules sets if no target module was given
         for driver_config in modules_sets.values() {
-            link_modules(driver_config, &kernel_version)?;
+            if !driver_config.load_only {
+                link_modules(driver_config, &kernel_version)?;
+            }
         }
     }
 
@@ -283,7 +289,12 @@ fn load_modules_sets(
 ) -> Result<()> {
     // Update the modules.dep before we attempt to load kernel modules
     // We need to confirm if there is a specific modules-set and if so, add a preference for that into depmod
-    let args: Vec<String> = Vec::new();
+    let mut args: Vec<String> = Vec::new();
+    if modules_sets.contains_key("nvidia-tesla") {
+        args.push("--config=/usr/share/nvidia/tesla-depmod.conf".to_string());
+    } else if modules_sets.contains_key("nvidia-open-gpu") {
+        args.push("--config=/usr/share/nvidia/open-gpu-depmod.conf".to_string());
+    }
     command(DEPMOD_BIN_PATH, args)?;
     info!("Updated modules dependencies");
 

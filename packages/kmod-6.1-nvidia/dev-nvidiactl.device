@@ -6,6 +6,7 @@ Description=Monitor for device to confirm NVIDIA drivers are loaded
 # disable manual restarts to prevent unnecessary kernel modules rewrites.
 RefuseManualStart=true
 RefuseManualStop=true
+TimeoutSec=15s
 
 [Install]
 WantedBy=preconfigured.target

@@ -10,7 +10,7 @@ RefuseManualStop=true
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/driverdog --modules-set %I link-modules
+ExecStart=/usr/bin/driverdog link-modules
 RemainAfterExit=true
 StandardError=journal+console
 

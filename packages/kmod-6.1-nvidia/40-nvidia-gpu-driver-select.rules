@@ -2,11 +2,11 @@
 SUBSYSTEM=="pci", OPTIONS="log_level=debug"
 SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", IMPORT{program}=="/usr/bin/ghostdog match-nvidia-driver %s{vendor}"
 # maybe create a symlink 
-SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", SYMLINK+="$env{BOTTLEROCKET_NVIDIA_DRIVER}"
-SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{BOTTLEROCKET_NVIDIA_DRIVER}=="nvidia-open-gpu", GOTO="nvidia_open_gpu"
-SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-tesla-kernel-modules.service", TAG+="systemd", GOTO="nvidia_end"
+#SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", SYMLINK+="$env{BOTTLEROCKET_NVIDIA_DRIVER}"
+#SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{BOTTLEROCKET_NVIDIA_DRIVER}=="nvidia-open-gpu", GOTO="nvidia_open_gpu"
+#SUBSYSTEM=#="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-tesla-kernel-modules.service", TAG+="systemd", GOTO="nvidia_end"
 
-LABEL="nvidia_open_gpu"
-SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-open-gpu-kernel-modules.service", TAG+="systemd"
+#LABEL="nvidia_open_gpu"
+#SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ENV{SYSTEMD_WANTS}="load-open-gpu-kernel-modules.service", TAG+="systemd"
 
-LABEL="nvidia_end"
+#LABEL="nvidia_end"

@@ -21,7 +21,7 @@ Release: 1%{?dist}
 Summary: NVIDIA drivers for the 6.1 kernel
 # We use these licences because we only ship our own software in the main package,
 # each subpackage includes the LICENSE file provided by the Licenses.toml file
-License: Apache-2.0 OR MIT
+License: Apache-2.0 OR MIT OR GPL-2.0-only
 URL: http://www.nvidia.com/
 
 # NVIDIA archives from 0 to 199
@@ -87,7 +87,6 @@ mkdir fabricmanager-linux-%{fm_arch}-%{tesla_ver}-archive
 rpm2cpio %{_sourcedir}/nvidia-fabric-manager-%{tesla_ver}-1.%{_cross_arch}.rpm | cpio -idmV -D fabricmanager-linux-%{fm_arch}-%{tesla_ver}-archive
 
 # Add the license.
-# TODO we may need to confirm the open-gpu driver license is in the right package alongside this one
 install -p -m 0644 %{S:2} .
 
 %global kernel_sources %{_builddir}/kernel-devel
@@ -189,13 +188,11 @@ pushd NVIDIA-Linux-%{_cross_arch}-%{tesla_ver}
 install -d %{buildroot}%{_cross_libexecdir}/nvidia/tesla/bin
 install -d %{buildroot}%{_cross_libdir}/nvidia/tesla
 install -d %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
-install -d %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers
 install -d %{buildroot}%{_cross_factorydir}/nvidia/tesla
 
 # Open driver
-install -d %{buildroot}%{_cross_libexecdir}/nvidia/open-gpu/bin
-install -d %{buildroot}%{_cross_libdir}/nvidia/open-gpu
 install -d %{buildroot}%{_cross_factorydir}/nvidia/open-gpu
+install -d %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers
 
 install -m 0644 %{S:300} %{buildroot}%{_cross_tmpfilesdir}/nvidia-tesla.conf
 sed -e 's|__NVIDIA_MODULES__|%{_cross_datadir}/nvidia/tesla/module-objects.d/|' %{S:301} > \
@@ -239,9 +236,6 @@ install kernel/nvidia-drm.mod.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/modu
 install kernel/nvidia-drm.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-objects.d
 
 # open driver
-# These won't go to the /module-objects.d but instead staight to the module cache (or somewhere to have them hiding in case pre-loading happens)
-# kernel/drivers/extra/video/nvidia/open-gpu - need to find the macro for kernel drivers dir
-# We can put a drop in for depmod that will prefer the open-gpu path over the tesla path (or vice versa) to ensure this works. Probably in driverdog
 install -d %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 install kernel-open/nvidia.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 
@@ -288,11 +282,11 @@ install -d %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 install -p -m 0644 firmware/gsp_ga10x.bin %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 install -p -m 0644 firmware/gsp_tu10x.bin %{buildroot}%{_cross_libdir}/firmware/nvidia/%{tesla_ver}
 
+# Include the open driver supported devices file for runtime matching of the driver. This is consumed by ghostdog to match the driver to this list
 install -p -m 0644 supported-gpus/open-gpu-supported-devices.json %{buildroot}%{_cross_datadir}/nvidia/open-gpu-supported-devices.json
 install -d %{buildroot}%{_cross_udevrulesdir}
 install -p -m 0644 %{S:205} %{buildroot}%{_cross_udevrulesdir}/40-nvidia-gpu-driver-select.rules
 popd
-
 
 # Begin NVIDIA fabric manager binaries and topologies
 pushd fabricmanager-linux-%{fm_arch}-%{tesla_ver}-archive
@@ -328,7 +322,6 @@ popd
 %dir %{_cross_datadir}/nvidia/tesla/module-objects.d
 %dir %{_cross_factorydir}/nvidia/tesla
 # dirs for open driver 
-%dir %{_cross_libdir}/nvidia/open-gpu
 %dir %{_cross_datadir}/nvidia/open-gpu/drivers
 %dir %{_cross_factorydir}/nvidia/open-gpu
 
@@ -365,7 +358,7 @@ popd
 %{_cross_datadir}/nvidia/tesla/module-objects.d/nv-modeset-kernel.o
 %{_cross_datadir}/nvidia/tesla/module-objects.d/nvidia-modeset.mod.o
 
-# open driver - this are no longer needed once linked
+# open driver
 %{_cross_datadir}/nvidia/open-gpu/drivers/nvidia.ko
 
 # uvm
@@ -373,12 +366,17 @@ popd
 
 # modeset
 %{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-modeset.ko
+
+# drm
 %{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-drm.ko
+
+# peermem
 %{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-peermem.ko
 
 # tmpfiles
 %{_cross_tmpfilesdir}/nvidia-tesla.conf
 
+# Provide the service to copy the open-gpu drivers when needed
 %{_cross_unitdir}/nvidia-open-gpu-modules.service
 
 # We only install the libraries required by all the DRIVER_CAPABILITIES, described here:
@@ -465,6 +463,7 @@ popd
 
 # Open GPU drivers supported devices file
 %{_cross_datadir}/nvidia/open-gpu-supported-devices.json
+# depmod configuration files for prefering the right driver on load
 %{_cross_datadir}/nvidia/open-gpu-depmod.conf
 %{_cross_datadir}/nvidia/tesla-depmod.conf
 %{_cross_udevrulesdir}/40-nvidia-gpu-driver-select.rules

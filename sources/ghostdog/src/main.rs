@@ -13,7 +13,6 @@ use snafu::{ensure, ResultExt};
 use std::collections::HashSet;
 use std::env;
 use std::fs;
-use std::io::Write;
 use std::io::{Read, Seek};
 use std::path::Path;
 use std::path::PathBuf;
@@ -69,33 +68,45 @@ struct MatchNvidiaDriverArgs {
 
 #[derive(Deserialize)]
 #[serde()]
+/// Open GPU struct for comparing PCI ID's to a known list of supported devices.
 enum SupportedDevicesConfiguration {
     #[serde(rename = "open-gpu")]
     OpenGpu(Vec<GpuDeviceData>),
 }
 
 #[derive(PartialEq, Debug, Deserialize)]
+/// The GPU Device Data contains various features of the device. Only Name, Device ID, and Features are required
+/// a particular device
 struct GpuDeviceData {
     #[serde(rename = "devid")]
+    /// PCI Device ID
     device_id: String,
     #[serde(rename = "subdevid")]
+    /// PCI Subdevice ID
     subdevice_id: Option<String>,
     #[serde(rename = "subvendorid")]
+    /// PCI Subvendor ID
     subvendor_id: Option<String>,
+    /// Name of the device
     name: String,
+    /// List of features the device supports. Noteably we are looking for "kernelopen" to match the driver
     features: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
+/// Struct to hold the PCI_ID which is typically provided as "VENDOR_ID:DEVICE_ID" via udev
 struct PciDevice {
+    /// PCI Vendor ID
     vendor_id: String,
+    /// PCI Device ID
     device_id: String,
 }
 
 impl FromStr for PciDevice {
     type Err = String;
+    /// The string provided by udev is in the form of "VENDOR_ID:DEVICE_ID" and is parsed as such
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let mut parts = s.split(":");
+        let mut parts = s.split(':');
         let vendor_id = parts
             .next()
             .map(ToString::to_string)
@@ -106,11 +117,11 @@ impl FromStr for PciDevice {
             .and_then(|s| (!s.is_empty()).then_some(s))
             .ok_or_else(|| "Missing Device ID".to_string())?;
         if parts.next().is_some() {
-            return Err(format!("Invalid PCI_ID provided: {}", s.to_string()));
+            return Err(format!("Invalid PCI_ID provided: {}", s));
         };
         Ok(Self {
-            vendor_id: vendor_id,
-            device_id: device_id,
+            vendor_id,
+            device_id,
         })
     }
 }
@@ -131,15 +142,11 @@ fn run() -> Result<()> {
             emit_device_name(&device_name);
         }
         SubCommand::MatchNvidiaDriver(vendor) => {
-            let path = "/tmp/ghostdog.env";
-            let mut f = fs::File::create(&path).context(error::DeviceOpenSnafu { path })?;
-            for (key, value) in env::vars() {
-                let _ = writeln!(&mut f, "{key}: {value}").context(error::FileWriteSnafu { path });
-            }
-
+            // Currently, we only want to run this for NVIDIA devices
             if vendor.vendor == NVIDIA_VENDOR_ID {
                 let pci_id = env::var("PCI_ID").context(error::MissingPciIdEnvSnafu)?;
                 let driver_choice = find_preferred_driver(pci_id)?;
+                // After choosing the driver, drop a marker file provide this decision to others on the system (like systemd)
                 if !Path::new(NVIDIA_RUN_DIR).exists() {
                     fs::create_dir_all(NVIDIA_RUN_DIR).context(error::CreateDirSnafu {
                         path: NVIDIA_RUN_DIR,
@@ -150,6 +157,7 @@ fn run() -> Result<()> {
                     path: marker_path.clone(),
                 })?;
 
+                // Copy the driverdog configuration from the factory into /etc/drivers so the preferred driver is loaded
                 if !Path::new(DEFAULT_DRIVER_CONFIG_PATH).exists() {
                     fs::create_dir_all(DEFAULT_DRIVER_CONFIG_PATH).context(
                         error::CreateDirSnafu {
@@ -167,9 +175,8 @@ fn run() -> Result<()> {
                         d: etc_driver_path,
                     },
                 )?;
+                // emit the preference back to udev for additional processing in the rule
                 println!("BOTTLEROCKET_NVIDIA_DRIVER={}", driver_choice);
-            } else {
-                let _ = writeln!(&mut f, "Argument passed: {}", vendor.vendor);
             }
         }
     }
@@ -250,6 +257,7 @@ fn read_supported_devices_file(path: PathBuf) -> Result<SupportedDevicesConfigur
 
 /// Given a PCI ID, search the Open GPU Supported Devices File to determine if the Open GPU Driver should be used
 fn find_preferred_driver(pci_id: String) -> Result<String> {
+    // This corresponds to T4 devices which are Turing based and supported, but currently do not show up in the supported-devices file
     if pci_id == "10DE:1EB8" {
         return Ok("nvidia-open-gpu".to_string());
     }
@@ -269,8 +277,8 @@ fn find_preferred_driver(pci_id: String) -> Result<String> {
         }
     }
 
-    // let (vendor_id, device_id): (String, String) = pci_id.split(":").into();
-    return Ok("nvidia-tesla".to_string());
+    // If we don't find a match, choose the proprietary driver
+    Ok("nvidia-tesla".to_string())
 }
 
 /// Print the device type in the environment key format udev expects.
@@ -326,11 +334,6 @@ mod error {
         },
         #[snafu(display("Invalid device info for device '{}'", path.display()))]
         InvalidDeviceInfo { path: std::path::PathBuf },
-        #[snafu(display("Failed to write to '{}': {}", path.display(), source))]
-        FileWrite {
-            path: std::path::PathBuf,
-            source: std::io::Error,
-        },
         #[snafu(display("No ENV variable for PCI_ID provided"))]
         MissingPciIdEnv { source: std::env::VarError },
         #[snafu(display("Failed to open '{}': {}", path.display(), source))]
@@ -345,8 +348,6 @@ mod error {
         },
         #[snafu(display("Couldn't parse the GPU Devices File: {}", source))]
         ParseGpuDevicesFile { source: serde_json::Error },
-        #[snafu(display("Invalid PCI_ID provided: {}", input))]
-        InvalidPciId { input: String },
         #[snafu(display("Unable to read PCI_ID provided: `{}`: {}", pci_id, message))]
         ParsePciId { pci_id: String, message: String },
         #[snafu(display("Failed to write '{}': {}", path.display(), source))]
@@ -455,6 +456,7 @@ mod test {
         device_info
     }
 
+    #[test]
     fn parse_open_gpu_supported_devices_file() {
         let test_json = test_data().join("open-gpu-supported-devices-test.json");
 
@@ -464,7 +466,6 @@ mod test {
             SupportedDevicesConfiguration::OpenGpu(data) => {
                 assert!(data.len() == 5);
             }
-            _ => panic!("Unsupported file schema"),
         }
     }
 

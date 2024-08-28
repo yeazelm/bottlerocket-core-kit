@@ -1,1 +1,2 @@
+# Force the open driver to be excluded since the tesla path will be preferred
 exclude __PREFIX__/lib/modules/__KERNEL_VERSION__/kernel/drivers/extra/video/nvidia/open-gpu

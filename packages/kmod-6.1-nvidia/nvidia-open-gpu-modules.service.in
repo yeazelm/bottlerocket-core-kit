@@ -9,7 +9,10 @@ ConditionPathExists=/run/nvidia/nvidia-open-gpu
 
 [Service]
 Type=oneshot
+# This ensures the directory is created before copying. The directory is created by tmpfiles but udev kicks this off early in boot
 ExecStart=/usr/bin/mkdir -p __NVIDIA_MODULES__
+# This copies the files from the factory directory which won't be found by modprobe to the proper driver directory which driverdog 
+# will expect. This prevents auto-loading of the drivers when teh proprietary driver is required.
 ExecStart=/usr/bin/cp -r -n __NVIDIA_MODULES__ __PREFIX__/lib/modules/__KERNEL_VERSION__/kernel/drivers/extra/video/nvidia/open-gpu
 
 RemainAfterExit=true

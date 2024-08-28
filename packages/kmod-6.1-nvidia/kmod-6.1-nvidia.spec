@@ -42,6 +42,7 @@ Source204: nvidia-fabricmanager.cfg
 Source205: 40-nvidia-gpu-driver-select.rules
 Source206: open-gpu-depmod.conf.in
 Source207: tesla-depmod.conf.in
+Source208: nvidia-open-gpu-modules.service.in
 
 # NVIDIA tesla conf files from 300 to 399
 Source300: nvidia-tesla-tmpfiles.conf
@@ -92,7 +93,7 @@ install -p -m 0644 %{S:2} .
 %global kernel_sources %{_builddir}/kernel-devel
 tar -xf %{_cross_datadir}/bottlerocket/kernel-devel.tar.xz
 
-%global _kernel_version %(ls %{kernel_sources}/include/config/kernel.release)
+%define _kernel_version %(ls %{kernel_sources}/include/config/kernel.release)
 ## TODO Fix this to use the kernel config
 %global _cross_kmoddir %{_cross_libdir}/modules/6.1.102
 
@@ -176,12 +177,20 @@ install -p -m 0644 %{S:203} %{buildroot}%{_cross_unitdir}
 install -d %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/nvidia
 install -p -m 0644 %{S:204} %{buildroot}%{_cross_factorydir}%{_cross_sysconfdir}/nvidia/fabricmanager.cfg
 
+# Add in open gpu cp module
+sed \
+  -e "s|__KERNEL_VERSION__|${KERNEL_VERSION}|" \
+  -e "s|__PREFIX__|%{_cross_prefix}|" \
+  -e "s|__NVIDIA_MODULES__|%{_cross_datadir}/nvidia/open-gpu/drivers|" %{S:208} > nvidia-open-gpu-modules.service
+install -p -m 0644 nvidia-open-gpu-modules.service %{buildroot}%{_cross_unitdir}/nvidia-open-gpu-modules.service
+
 # Begin NVIDIA tesla driver
 pushd NVIDIA-Linux-%{_cross_arch}-%{tesla_ver}
 # Proprietary driver
 install -d %{buildroot}%{_cross_libexecdir}/nvidia/tesla/bin
 install -d %{buildroot}%{_cross_libdir}/nvidia/tesla
 install -d %{buildroot}%{_cross_datadir}/nvidia/tesla/module-objects.d
+install -d %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers
 install -d %{buildroot}%{_cross_factorydir}/nvidia/tesla
 
 # Open driver
@@ -234,20 +243,20 @@ install kernel/nvidia-drm.o %{buildroot}/%{_cross_datadir}/nvidia/tesla/module-o
 # These won't go to the /module-objects.d but instead staight to the module cache (or somewhere to have them hiding in case pre-loading happens)
 # kernel/drivers/extra/video/nvidia/open-gpu - need to find the macro for kernel drivers dir
 # We can put a drop in for depmod that will prefer the open-gpu path over the tesla path (or vice versa) to ensure this works. Probably in driverdog
-install -d %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu
-install kernel-open/nvidia.ko %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+install -d %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
+install kernel-open/nvidia.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 
 # uvm
-install kernel-open/nvidia-uvm.ko %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+install kernel-open/nvidia-uvm.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 
 # modeset
-install kernel-open/nvidia-modeset.ko %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+install kernel-open/nvidia-modeset.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 
 # peermem
-install kernel-open/nvidia-peermem.ko %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+install kernel-open/nvidia-peermem.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 
 # drm
-install kernel-open/nvidia-drm.ko %{buildroot}%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+install kernel-open/nvidia-drm.ko %{buildroot}%{_cross_datadir}/nvidia/open-gpu/drivers/
 # end open driver
 
 # Binaries
@@ -321,7 +330,7 @@ popd
 %dir %{_cross_factorydir}/nvidia/tesla
 # dirs for open driver 
 %dir %{_cross_libdir}/nvidia/open-gpu
-%dir %{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/
+%dir %{_cross_datadir}/nvidia/open-gpu/drivers
 %dir %{_cross_factorydir}/nvidia/open-gpu
 
 # Binaries
@@ -358,18 +367,20 @@ popd
 %{_cross_datadir}/nvidia/tesla/module-objects.d/nvidia-modeset.mod.o
 
 # open driver - this are no longer needed once linked
-%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/nvidia.ko
+%{_cross_datadir}/nvidia/open-gpu/drivers/nvidia.ko
 
 # uvm
-%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/nvidia-uvm.ko
+%{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-uvm.ko
 
 # modeset
-%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/nvidia-modeset.ko
-%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/nvidia-drm.ko
-%{_cross_kmoddir}/kernel/drivers/extra/nvidia/open-gpu/nvidia-peermem.ko
+%{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-modeset.ko
+%{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-drm.ko
+%{_cross_datadir}/nvidia/open-gpu/drivers/nvidia-peermem.ko
 
 # tmpfiles
 %{_cross_tmpfilesdir}/nvidia-tesla.conf
+
+%{_cross_unitdir}/nvidia-open-gpu-modules.service
 
 # We only install the libraries required by all the DRIVER_CAPABILITIES, described here:
 # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#driver-capabilities

@@ -1,0 +1,19 @@
+[Unit]
+Description=Copy Open GPU drivers to needed modules directory
+Before=load-kernel-modules.service
+After=systemd-tmpfiles-setup.service
+DefaultDependencies=no
+RefuseManualStart=true
+RefuseManualStop=true
+ConditionPathExists=/run/nvidia/nvidia-open-gpu
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mkdir -p __NVIDIA_MODULES__
+ExecStart=/usr/bin/cp -r -n __NVIDIA_MODULES__ __PREFIX__/lib/modules/__KERNEL_VERSION__/kernel/drivers/extra/video/nvidia/open-gpu
+
+RemainAfterExit=true
+StandardError=journal+console
+
+[Install]
+WantedBy=load-kernel-modules.service

@@ -94,8 +94,7 @@ install -p -m 0644 %{S:2} .
 tar -xf %{_cross_datadir}/bottlerocket/kernel-devel.tar.xz
 
 %define _kernel_version %(ls %{kernel_sources}/include/config/kernel.release)
-## TODO Fix this to use the kernel config
-%global _cross_kmoddir %{_cross_libdir}/modules/6.1.102
+%global _cross_kmoddir %{_cross_libdir}/modules/%{_kernel_version}
 
 %build
 

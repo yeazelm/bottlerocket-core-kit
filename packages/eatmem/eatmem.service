@@ -1,0 +1,20 @@
+[Unit]
+Description=Start memory eater
+# This has to be executed after the kernel modules are loaded
+# otherwise the userspace component of the driver will fail to
+# query the /dev devices
+After=configured.target
+# Block manual interactions with this service. It doesn't
+# make sense to regenerate the GPU config file if the ECS
+# agent won't read it when it changes
+RefuseManualStart=true
+RefuseManualStop=true
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/eatmem
+RemainAfterExit=true
+StandardError=journal+console
+
+[Install]
+RequiredBy=multi-user.target

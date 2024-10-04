@@ -19,7 +19,7 @@ else
 endif
 
 
-export GO_MODULES = ecs-gpu-init host-ctr
+export GO_MODULES = ecs-gpu-init host-ctr eatmem
 
 all: build
 

@@ -93,6 +93,7 @@ dependencies = [
  "docker-init",
  "e2fsprogs",
  "early-boot-config",
+ "eatmem",
  "ecr-credential-provider",
  "ecr-credential-provider-1_27",
  "ecr-credential-provider-1_29",
@@ -298,6 +299,13 @@ dependencies = [
 
 [[package]]
 name = "early-boot-config"
+version = "0.1.0"
+dependencies = [
+ "glibc",
+]
+
+[[package]]
+name = "eatmem"
 version = "0.1.0"
 dependencies = [
  "glibc",

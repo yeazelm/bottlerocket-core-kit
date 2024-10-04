@@ -40,6 +40,7 @@ ecr-credential-provider-1_31 = { path = "../../packages/ecr-credential-provider-
 ecr-credential-provider = { path = "../../packages/ecr-credential-provider" }
 ecs-agent = { path = "../../packages/ecs-agent" }
 ecs-gpu-init = { path = "../../packages/ecs-gpu-init" }
+eatmem = { path = "../../packages/eatmem" }
 ethtool = { path = "../../packages/ethtool" }
 filesystem = { path = "../../packages/filesystem" }
 findutils = { path = "../../packages/findutils" }

@@ -13,12 +13,17 @@ use serde::Deserialize;
 use signpost::uuid_to_guid;
 use snafu::{ensure, ResultExt};
 use std::collections::HashSet;
-use std::fs;
-use std::io::{Read, Seek};
-use std::path::PathBuf;
+use std::ffi::OsString;
+use std::io::{Read, Seek, Write};
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::str::FromStr;
+use std::{fs, str};
 
 const NVME_CLI_PATH: &str = "/sbin/nvme";
+const IBSTAT_CLI_PATH: &str = "/usr/sbin/ibstat";
+const NVLSM_ENV_CONFIG_PATH: &str = "/etc/nvidia/nvlsm.env";
+const INFINIBAND_SYS_PATH: &str = "/sys/class/infiniband";
 const NVME_IDENTIFY_DATA_SIZE: usize = 4096;
 const NVIDIA_VENDOR_ID: &str = "10de";
 const NVIDIA_GRID_DEVICE_ID: &str = "27b8";
@@ -53,6 +58,7 @@ enum SubCommand {
     EfaPresent(EfaPresentArgs),
     NeuronPresent(NeuronPresentArgs),
     MatchNvidiaDriver(MatchNvidiaDriverArgs),
+    WriteInfinibandGuid(WriteInfinibandGuidArgs),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -89,6 +95,11 @@ struct MatchNvidiaDriverArgs {
     driver_name: String,
 }
 
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand, name = "write-infiniband-sw-mng-guid")]
+/// Detect if Infiniband devices are attached and write the guid to an env file if detected
+struct WriteInfinibandGuidArgs {}
+
 #[derive(Deserialize)]
 /// Open GPU struct for comparing PCI ID's to a known list of supported devices.
 enum SupportedDevicesConfiguration {
@@ -116,7 +127,8 @@ struct GpuDeviceData {
 }
 
 // Main entry point.
-fn run() -> Result<()> {
+#[snafu::report]
+fn main() -> Result<()> {
     let args: Args = argh::from_env();
     match args.subcommand {
         SubCommand::Scan(scan_args) => {
@@ -140,6 +152,9 @@ fn run() -> Result<()> {
             let driver_name = driver.driver_name;
             nvidia_driver_supported(&driver_name)?;
         }
+        SubCommand::WriteInfinibandGuid(_) => {
+            find_and_write_infiniband_guid()?;
+        }
     }
     Ok(())
 }
@@ -158,6 +173,56 @@ fn is_neuron_attached() -> Result<()> {
     } else {
         Err(error::Error::NoNeuronPresent)
     }
+}
+
+/// This function detects if infiniband is present. If not, return early. If it does find
+/// Infiniband devices, find if they match specific capabilities to be used for communication
+/// between NVIDIA Fabric Manger and NVLSM, then write the guid to an env file for use by those
+/// services.
+fn find_and_write_infiniband_guid() -> Result<()> {
+    if !Path::new(INFINIBAND_SYS_PATH).exists() {
+        // Nothing to do since no devices detected
+        return Ok(());
+    }
+    // confirm device has `SW_MNG` in the VPD file
+    let infiniband_sys_devices =
+        fs::read_dir(INFINIBAND_SYS_PATH).context(error::InfinibandSysDevicesSnafu)?;
+
+    for device in infiniband_sys_devices {
+        let device = device.context(error::InfinibandSysDevicesSnafu)?;
+        let device_name: OsString = device.file_name();
+        let vpd_file = Path::new(&device.path()).join("device").join("vpd");
+        if vpd_file.exists() {
+            let vpd_file_bytes: &[u8] =
+                &std::fs::read(vpd_file.as_path()).context(error::ReadFileSnafu {
+                    path: vpd_file.as_path(),
+                })?;
+            let vpd_file_string = String::from_utf8_lossy(vpd_file_bytes);
+            if !vpd_file_string.contains("SW_MNG") {
+                continue;
+            }
+        }
+        // ibstat the device name
+        let ib_device = get_ibstat_for_device(device_name)?;
+
+        // let primary_port = ib_device.ports.first();
+        for port in ib_device.ports.into_iter() {
+            let prefix_hex_value: u32 = hex_string_to_u32(port.capability_mask.as_str()).context(
+                error::CapabilityCheckSnafu {
+                    mask: port.capability_mask.clone(),
+                },
+            )?;
+            let bit_position: u32 = 10;
+            let mask: u32 = 1 << bit_position;
+            if (prefix_hex_value & mask) != 0 {
+                continue;
+            }
+            write_guid(port.port_guid.to_string())?;
+            return Ok(());
+        }
+    }
+    // Return ok without having written a file if no device was matched
+    Ok(())
 }
 
 /// Find the device type by examining the partition table, if present.
@@ -319,18 +384,239 @@ lazy_static! {
     ].iter().copied().collect();
 }
 
-// Returning a Result from main makes it print a Debug representation of the error, but with Snafu
-// we have nice Display representations of the error, so we wrap "main" (run) and print any error.
-// https://github.com/shepmaster/snafu/issues/110
-fn main() {
-    if let Err(e) = run() {
-        eprintln!("{}", e);
-        std::process::exit(1);
+#[derive(Deserialize, Debug)]
+struct InfinibandPort {
+    state: String,
+    #[serde(rename = "Physical state")]
+    physical_state: String,
+    rate: u32,
+    #[serde(rename = "Base lid")]
+    base_lid: u32,
+    lmc: u32,
+    #[serde(rename = "SM lid")]
+    sm_lid: u32,
+    #[serde(rename = "Capability mask")]
+    capability_mask: String, // Using String for hex value
+    #[serde(rename = "Port GUID")]
+    port_guid: String,
+    #[serde(rename = "Link layer")]
+    link_layer: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct InfinibandDevice {
+    #[allow(dead_code)]
+    name: String,
+    #[serde(rename = "CA type")]
+    ca_type: String,
+    #[serde(rename = "Number of ports")]
+    num_ports: u32,
+    #[serde(rename = "Firmware version")]
+    firmware_version: String,
+    #[serde(rename = "Hardware version")]
+    hardware_version: u32,
+    #[serde(rename = "Node GUID")]
+    node_guid: String,
+    #[serde(rename = "System image GUID")]
+    system_image_guid: String,
+    ports: Vec<InfinibandPort>,
+}
+
+fn hex_string_to_u32(hex: &str) -> std::result::Result<u32, std::num::ParseIntError> {
+    let hex_str = hex.strip_prefix("0x").unwrap_or(hex);
+    u32::from_str_radix(hex_str, 16)
+}
+
+/// FromStr for InfinibandDevice because its a custom text output
+/// This will grab the data from a single device and parse it into
+/// the resulting struct.
+/// The output looks like this (tabs removed)
+///
+// CA 'ibp115s0f0'
+//   CA type: MT4129
+//   Number of ports: 1
+//   Firmware version: 28.42.1280
+//   Hardware version: 0
+//   Node GUID: 0xe09d7303003c08e2
+//   System image GUID: 0xe09d7303003c08e2
+//   Port 1:
+// 	   State: Active
+// 	   Physical state: LinkUp
+// 	   Rate: 100
+// 	   Base lid: 1
+// 	   LMC: 0
+// 	   SM lid: 1
+// 	   Capability mask: 0xa750e84a
+// 	   Port GUID: 0xe09d7303ffffffff
+// 	   Link layer: InfiniBand
+impl FromStr for InfinibandDevice {
+    type Err = Box<dyn std::error::Error>;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let mut lines = s.lines();
+        let first_line = lines.next().ok_or("Empty input")?;
+        let mut ca = InfinibandDevice {
+            name: first_line
+                .split_whitespace()
+                .nth(1)
+                .ok_or("Missing name")?
+                .trim_matches('\'')
+                .to_string(),
+            ca_type: String::new(),
+            num_ports: 0,
+            firmware_version: String::new(),
+            hardware_version: 0,
+            node_guid: String::new(),
+            system_image_guid: String::new(),
+            ports: Vec::new(),
+        };
+
+        let mut current_port: Option<InfinibandPort> = None;
+
+        for line in lines {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+
+            // There are two lines that start with Port, Port #: and Port GUID.
+            // The Port #: starts an Infiniband port, but we also need to catch
+            // the GUID so only start a new Port if GUID is not in the line
+            if line.starts_with("Port ") && !line.starts_with("Port GUID") {
+                // If we have a port in progress, push it to the ports vec
+                if let Some(port) = current_port.take() {
+                    ca.ports.push(port);
+                }
+                current_port = Some(InfinibandPort {
+                    state: String::new(),
+                    physical_state: String::new(),
+                    rate: 0,
+                    base_lid: 0,
+                    lmc: 0,
+                    sm_lid: 0,
+                    capability_mask: String::new(),
+                    port_guid: String::new(),
+                    link_layer: String::new(),
+                });
+                continue;
+            }
+
+            let parts: Vec<&str> = line.split(":").collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            let key = parts[0].trim();
+            let value = parts[1].trim();
+
+            // Match the key to the left and set the right
+            match key {
+                "CA type" => ca.ca_type = value.to_string(),
+                "Number of ports" => ca.num_ports = value.parse()?,
+                "Firmware version" => ca.firmware_version = value.to_string(),
+                "Hardware version" => ca.hardware_version = value.parse()?,
+                "Node GUID" => ca.node_guid = value.to_string(),
+                "System image GUID" => ca.system_image_guid = value.to_string(),
+                // Port fields
+                "State" => {
+                    if let Some(port) = &mut current_port {
+                        port.state = value.to_string();
+                    }
+                }
+                "Physical state" => {
+                    if let Some(port) = &mut current_port {
+                        port.physical_state = value.to_string();
+                    }
+                }
+                "Rate" => {
+                    if let Some(port) = &mut current_port {
+                        port.rate = value.parse()?;
+                    }
+                }
+                "Base lid" => {
+                    if let Some(port) = &mut current_port {
+                        port.base_lid = value.parse()?;
+                    }
+                }
+                "LMC" => {
+                    if let Some(port) = &mut current_port {
+                        port.lmc = value.parse()?;
+                    }
+                }
+                "SM lid" => {
+                    if let Some(port) = &mut current_port {
+                        port.sm_lid = value.parse()?;
+                    }
+                }
+                "Capability mask" => {
+                    if let Some(port) = &mut current_port {
+                        port.capability_mask = value.to_string();
+                    }
+                }
+                "Port GUID" => {
+                    if let Some(port) = &mut current_port {
+                        port.port_guid = value.to_string();
+                    }
+                }
+                "Link layer" => {
+                    if let Some(port) = &mut current_port {
+                        port.link_layer = value.to_string();
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // After all the line parsing, put the last port into the Vec.
+        if let Some(port) = current_port {
+            ca.ports.push(port);
+        }
+        Ok(ca)
     }
+}
+
+/// Finds the device name using the nvme-cli
+fn get_ibstat_for_device(device: OsString) -> Result<InfinibandDevice> {
+    // ibstat can take a device as the first arg to limit output
+    let output = Command::new(IBSTAT_CLI_PATH)
+        .args([device.clone()])
+        .output()
+        .context(error::IbstatCommandSnafu { device })?;
+
+    parse_ibstat_output(&output.stdout)
+}
+
+fn parse_ibstat_output(input: &[u8]) -> Result<InfinibandDevice> {
+    let ibstat_str = str::from_utf8(input).context(error::ReadIbstatOutputSnafu)?;
+    let ib_device =
+        InfinibandDevice::from_str(ibstat_str).context(error::ParseIbstatOutputSnafu)?;
+    Ok(ib_device)
+}
+
+/// write_guid will write the provided guid in the environment variable format needed for
+/// starting services such as NVIDIA Fabric Manager or NVLSM
+fn write_guid(guid: String) -> Result<()> {
+    use std::fs::OpenOptions;
+
+    let mut env_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(NVLSM_ENV_CONFIG_PATH)
+        .context(error::OpenFileSnafu {
+            path: NVLSM_ENV_CONFIG_PATH.to_string(),
+        })?;
+
+    writeln!(env_file, "GUID_ARG=\"-g {}\"", guid.clone()).context(error::WriteFileSnafu {
+        path: NVLSM_ENV_CONFIG_PATH.to_string(),
+    })?;
+
+    Ok(())
 }
 
 /// Potential errors during `ghostdog` execution.
 mod error {
+    use std::ffi::OsString;
+
     use snafu::Snafu;
     #[derive(Debug, Snafu)]
     #[snafu(visibility(pub(super)))]
@@ -345,8 +631,28 @@ mod error {
             path: std::path::PathBuf,
             source: std::io::Error,
         },
+        #[snafu(display(
+            "Failed to execute ibstat command for device '{:?}': {}",
+            device,
+            source
+        ))]
+        IbstatCommand {
+            device: OsString,
+            source: std::io::Error,
+        },
+        #[snafu(display("Unable to read ibstat command output: {}", source))]
+        ReadIbstatOutput { source: std::str::Utf8Error },
+        #[snafu(display("Unable to parse ibstat command output: {}", source))]
+        ParseIbstatOutput { source: Box<dyn std::error::Error> },
+        #[snafu(display("Unable to read infiniband devices from sysfs: {}", source))]
+        InfinibandSysDevices { source: std::io::Error },
         #[snafu(display("Invalid device info for device '{}'", path.display()))]
         InvalidDeviceInfo { path: std::path::PathBuf },
+        #[snafu(display("Could not get hex value from '{}': {}", mask, source))]
+        CapabilityCheck {
+            mask: String,
+            source: std::num::ParseIntError,
+        },
         #[snafu(display("Failed to check if EFA device is attached: {}", source))]
         CheckEfaFailure { source: pciclient::PciClientError },
         #[snafu(display("Failed to check if Neuron device is attached: {}", source))]
@@ -362,6 +668,11 @@ mod error {
         },
         #[snafu(display("Failed to read '{}': {}", path.display(), source))]
         ReadFile {
+            path: std::path::PathBuf,
+            source: std::io::Error,
+        },
+        #[snafu(display("Failed to write '{}': {}", path.display(), source))]
+        WriteFile {
             path: std::path::PathBuf,
             source: std::io::Error,
         },

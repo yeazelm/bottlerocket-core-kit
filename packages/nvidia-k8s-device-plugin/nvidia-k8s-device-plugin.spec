@@ -21,6 +21,7 @@ Source5: nvidia-mps-control-daemon.service
 Source6: nvidia-mps-control-daemon-exec-start-conf
 
 Patch0001: 0001-Update-MPS-roots-for-immutable-host-OS.patch
+Patch0002: 0002-Skip-SELinux-context-setting-on-Bottlerocket.patch
 
 BuildRequires: %{_cross_os}glibc-devel
 Requires: %{name}(binaries)

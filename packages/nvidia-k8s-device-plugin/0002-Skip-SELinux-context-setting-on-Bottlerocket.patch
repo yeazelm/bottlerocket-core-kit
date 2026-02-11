@@ -1,0 +1,28 @@
+From: Bottlerocket Authors <bottlerocket@amazon.com>
+Subject: [PATCH] Skip SELinux context setting on Bottlerocket
+
+Bottlerocket's SELinux policy handles MPS socket labeling, so we skip
+the explicit context setting that would interfere with the policy.
+
+Signed-off-by: Bottlerocket Authors <bottlerocket@amazon.com>
+---
+ cmd/mps-control-daemon/mps/daemon.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/cmd/mps-control-daemon/mps/daemon.go b/cmd/mps-control-daemon/mps/daemon.go
+index 90655d1..a1b2c3d 100644
+--- a/cmd/mps-control-daemon/mps/daemon.go
++++ b/cmd/mps-control-daemon/mps/daemon.go
+@@ -152,6 +152,12 @@ func setSELinuxContext(path string, context string) error {
+ 		return fmt.Errorf("error checking if SELinux is enabled: %w", err)
+ 	}
+ 
++	// Skip SELinux context setting on Bottlerocket - the OS policy handles it
++	if _, err := os.Stat("/etc/bottlerocket-release"); err == nil {
++		klog.InfoS("Skipping SELinux context setting on Bottlerocket", "path", path)
++		return nil
++	}
++
+ 	klog.InfoS("SELinux enabled, setting context", "path", path, "context", context)
+ 	return selinux.Chcon(path, context, true)
+ }

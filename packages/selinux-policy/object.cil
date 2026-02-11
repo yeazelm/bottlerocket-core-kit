@@ -108,6 +108,11 @@
 (roletype object_r api_socket_t)
 (context api_socket (system_u object_r api_socket_t s0))
 
+; Socket files for NVIDIA MPS (Multi-Process Service) communication.
+(type mps_socket_t)
+(roletype object_r mps_socket_t)
+(context mps_socket (system_u object_r mps_socket_t s0))
+
 ; Files for cached container layers.
 (type cache_t)
 (roletype object_r cache_t)

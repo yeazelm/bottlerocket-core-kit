@@ -125,6 +125,12 @@
 ; The socket for the API server gets the "api_socket_t" label.
 (typetransition api_t any_t sock_file "api.sock" api_socket_t)
 
+; MPS sockets created by system_t get the "mps_socket_t" label.
+; This enables containers to communicate with the host MPS daemon.
+; Note: mps-control-daemon sets pipe dir to container_file_t (alias for local_t).
+(typetransition system_t local_t sock_file "control" mps_socket_t)
+(typetransition system_t local_t sock_file "control_privileged" mps_socket_t)
+
 ; All subjects can describe anything.
 (allow all_s global (files (describe)))
 
@@ -266,6 +272,15 @@
 ; Unprivileged components are not allowed to use the API socket.
 (neverallow unprivileged_s api_socket_t (files (mutate)))
 
+; MPS socket permissions for GPU sharing.
+; system_t (mps-control-daemon) connects to system_t (nvidia-cuda-mps-control).
+(allow system_t system_t (unix_stream_socket (connectto)))
+(allow system_t mps_socket_t (sock_file (create read write getattr setattr unlink)))
+; Containers can connect to MPS sockets and write to MPS pipes.
+(allow container_s mps_socket_t (sock_file (read write getattr)))
+(allow container_s system_t (unix_stream_socket (connectto)))
+(allow container_s system_t (fifo_file (read write getattr)))
+
 ; Only trusted components are allowed to relabel all files, and to
 ; override filesystem labels through "*context=" mount options.
 (allow trusted_s global (files (relabel)))
@@ -318,6 +333,9 @@
 ; Shared object labels can also be used, so that volume types like
 ; emptyDir can be relabeled on behalf of containers.
 (allow shared_o local_t (filesystem (associate)))
+
+; MPS socket labels can be used on any_t filesystems (e.g. /run/nvidia/mps).
+(allow mps_socket_t any_t (filesystem (associate)))
 
 ; Containers are allowed to relax security constraints, since we
 ; don't control what code they run or how it's built.

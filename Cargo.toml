@@ -9,6 +9,7 @@ members = [
   "packages/aws-otel-collector",
   "packages/aws-signer-notation-plugin",
   "packages/aws-signing-helper",
+  "packages/aws-clock-bound",
   "packages/bash",
   "packages/binutils",
   "packages/chrony",

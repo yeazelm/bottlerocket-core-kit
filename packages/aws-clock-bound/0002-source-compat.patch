@@ -1,0 +1,102 @@
+diff --git a/src/daemon.rs b/src/daemon.rs
+index 897ac21a..8f7c4095 100644
+--- a/src/daemon.rs
++++ b/src/daemon.rs
+@@ -37,7 +37,7 @@ use crate::daemon::{
+ };
+ use tokio_util::task::TaskTracker;
+ 
+-use rand::{RngCore, rng};
++use rand::{RngCore, thread_rng};
+ use tokio::sync::watch;
+ use tokio_util::sync::CancellationToken;
+ use tracing::{error, info};
+@@ -72,7 +72,7 @@ impl Daemon {
+         let daemon_info = DaemonInfo {
+             major_version: 2,
+             minor_version: 100,
+-            startup_id: rng().next_u64(),
++            startup_id: thread_rng().next_u64(),
+         };
+ 
+         let clock_state_cancellation_token = CancellationToken::new();
+diff --git a/src/daemon/clock_sync_algorithm/ff/event_buffer/estimate.rs b/src/daemon/clock_sync_algorithm/ff/event_buffer/estimate.rs
+index c5bc479e..d92a8eee 100644
+--- a/src/daemon/clock_sync_algorithm/ff/event_buffer/estimate.rs
++++ b/src/daemon/clock_sync_algorithm/ff/event_buffer/estimate.rs
+@@ -155,11 +155,11 @@ impl<T: TscRtt + Clone> Estimate<T> {
+             // rev() because iter goes from oldest to newest
+             let mut rev_iter = local.iter().rev().peekable();
+ 
+-            if let Some(event) = rev_iter.peek()
+-                && event.tsc_post() == now_event_tsc_post
+-            {
+-                // if this is the value we just added skip
+-                rev_iter.next();
++            if let Some(event) = rev_iter.peek() {
++                if event.tsc_post() == now_event_tsc_post {
++                    // if this is the value we just added skip
++                    rev_iter.next();
++                }
+             }
+ 
+             let min_rtt_event = rev_iter.min_by_key(|event| event.rtt());
+diff --git a/src/daemon/clock_sync_algorithm/ff/event_buffer/local.rs b/src/daemon/clock_sync_algorithm/ff/event_buffer/local.rs
+index b0030e23..f34079de 100644
+--- a/src/daemon/clock_sync_algorithm/ff/event_buffer/local.rs
++++ b/src/daemon/clock_sync_algorithm/ff/event_buffer/local.rs
+@@ -120,13 +120,13 @@ impl<T: TscRtt + Debug> Local<T> {
+     /// Returns true if the event was added, false if it was rejected.
+     /// The value could be rejected if it is older (via TSC checks) than previous values.
+     fn push_if_newer(&mut self, event: T) -> Result<(), FeedError<T>> {
+-        if let Some(last) = self.inner.head()
+-            && event.tsc_post() <= last.tsc_post()
+-        {
+-            return Err(FeedError::Old {
+-                latest_tsc: last.tsc_post(),
+-                event,
+-            });
++        if let Some(last) = self.inner.head() {
++            if event.tsc_post() <= last.tsc_post() {
++                return Err(FeedError::Old {
++                    latest_tsc: last.tsc_post(),
++                    event,
++                });
++            }
+         }
+ 
+         self.inner.push(event);
+diff --git a/src/daemon/io/link_local.rs b/src/daemon/io/link_local.rs
+index 0af56682..c789023a 100644
+--- a/src/daemon/io/link_local.rs
++++ b/src/daemon/io/link_local.rs
+@@ -202,11 +202,11 @@ impl LinkLocal {
+             }
+         }
+ 
+-        if let Mode::Burst(start_time) = self.mode
+-            && start_time.elapsed() >= LINK_LOCAL_BURST_DURATION
+-        {
+-            self.transition_to_normal_mode();
+-            info!("Transitioning from `Burst` mode to `Normal` mode.");
++        if let Mode::Burst(start_time) = self.mode {
++            if start_time.elapsed() >= LINK_LOCAL_BURST_DURATION {
++                self.transition_to_normal_mode();
++                info!("Transitioning from `Burst` mode to `Normal` mode.");
++            }
+         }
+     }
+ 
+diff --git a/src/daemon/receiver_stream.rs b/src/daemon/receiver_stream.rs
+index d287bd31..c4b9a5c6 100644
+--- a/src/daemon/receiver_stream.rs
++++ b/src/daemon/receiver_stream.rs
+@@ -88,7 +88,7 @@ impl ReceiverStream {
+         // In the case that an actor produces events faster than we can poll,
+         // not considering fairness when retrieving events opens the door for starvation.
+         // In the future, we may implement more robust logic to consider fairness with event delivery.
+-        let mut rng = rand::rng();
++        let mut rng = rand::thread_rng();
+         streams.shuffle(&mut rng);
+ 
+         select_all(streams)

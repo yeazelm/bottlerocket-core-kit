@@ -1,0 +1,22 @@
+[package]
+name = "aws-clock-bound"
+version = "0.1.0"
+edition = "2021"
+publish = false
+build = "../build.rs"
+
+[package.metadata.build-package]
+source-groups = [
+    "clock-bound",
+]
+
+[[package.metadata.build-package.external-files]]
+path = "clock-bound-v3.0.0-alpha.1.tar.gz"
+url = "https://github.com/aws/clock-bound/archive/refs/tags/v3.0.0-alpha.1.tar.gz"
+sha512 = "fc439ea7ce961020f9c9dc7970cb55dd5fcde2ac029b5f18b421c8309fea47d873361a691a2578ef3b503865c5dba24bb347aa7fbc9c78f15659450a8b62259e"
+
+[lib]
+path = "../packages.rs"
+
+[build-dependencies]
+glibc = { path = "../glibc" }

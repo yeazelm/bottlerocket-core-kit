@@ -15,6 +15,7 @@ path = "../kit.rs"
 amazon-ecs-cni-plugins = { path = "../../packages/amazon-ecs-cni-plugins" }
 amazon-ssm-agent = { path = "../../packages/amazon-ssm-agent" }
 amazon-vpc-cni-plugins = { path = "../../packages/amazon-vpc-cni-plugins" }
+aws-clock-bound = { path = "../../packages/aws-clock-bound" }
 aws-iam-authenticator = { path = "../../packages/aws-iam-authenticator" }
 aws-otel-collector = { path = "../../packages/aws-otel-collector" }
 aws-signer-notation-plugin = { path = "../../packages/aws-signer-notation-plugin" }

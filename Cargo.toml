@@ -5,6 +5,7 @@ members = [
   "packages/amazon-ecs-cni-plugins",
   "packages/amazon-ssm-agent",
   "packages/amazon-vpc-cni-plugins",
+  "packages/aws-clock-bound",
   "packages/aws-iam-authenticator",
   "packages/aws-otel-collector",
   "packages/aws-signer-notation-plugin",

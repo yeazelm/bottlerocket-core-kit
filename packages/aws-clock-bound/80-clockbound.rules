@@ -1,0 +1,1 @@
+KERNEL=="vmclock0", MODE="0660", GROUP="clockbound"

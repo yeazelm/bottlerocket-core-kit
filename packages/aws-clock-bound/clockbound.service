@@ -1,0 +1,15 @@
+[Unit]
+Description=Feed Forward Time Synchronization Client
+Documentation=https://github.com/aws/clock-bound
+After=network.target
+
+[Service]
+Type=simple
+User=clockbound
+AmbientCapabilities=CAP_SYS_TIME
+ExecStart=/usr/sbin/clockbound
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

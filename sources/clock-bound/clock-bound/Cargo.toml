@@ -1,0 +1,63 @@
+# This is a dependency shim for the clock-bound third-party crate.
+# It exists solely to ensure Cargo resolves and vendors all dependencies
+# needed by the upstream clock-bound daemon. The actual source code is
+# fetched from an upstream release tarball at build time and patched
+# for workspace compatibility.
+#
+# Dependencies here MUST match the patched upstream Cargo.toml.
+# See packages/aws-clock-bound/0001-workspace-compat.patch for the
+# Cargo.toml modifications applied to the upstream source.
+
+[package]
+name = "clock-bound"
+version = "3.0.0-alpha.1"
+edition = "2021"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Dependency shim for clock-bound upstream crate"
+
+[dependencies]
+bon = { version = "3.8.0" }
+byteorder = "1"
+bytes = { version = "1", optional = true }
+chrono = { version = "0.4", optional = true }
+clap = { version = "4.5.50", features = ["derive"], optional = true }
+errno = { version = "0.3.0", default-features = false }
+libc = { version = "0.2", default-features = false, features = ["extra_traits"] }
+md5 = "0.8.0"
+nix = { version = "0.26" }
+nom = { version = "8", optional = true }
+reqwest = { version = "0.12.24", default-features = false, optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = "1.0.145"
+thiserror = { version = "2.0", optional = true }
+tokio = { version = "~1.43", features = [
+  "fs", "net", "macros", "rt", "rt-multi-thread", "signal", "sync", "time",
+], optional = true }
+tokio-util = { version = "=0.7.16", features = ["rt"], optional = true }
+tracing = "0.1"
+tracing-appender = { version = "0.2", optional = true }
+tracing-subscriber = { version = "0.3", features = ["std", "fmt", "json", "registry"] }
+futures = "0.3"
+rand = "0.8"
+tokio-retry = "0.3"
+
+[features]
+default = ["client"]
+client = []
+daemon = [
+  "dep:clap",
+  "dep:serde",
+  "dep:tokio",
+  "dep:tokio-util",
+  "dep:chrono",
+  "dep:bytes",
+  "dep:nom",
+  "dep:reqwest",
+  "dep:thiserror",
+  "dep:tracing-appender",
+  "nix/feature",
+  "nix/ioctl",
+  "nix/time",
+  "tracing-subscriber/env-filter",
+]

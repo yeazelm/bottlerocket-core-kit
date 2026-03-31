@@ -83,6 +83,8 @@ members = [
     "xfscli",
 
     "whippet",
+
+    "clock-bound/clock-bound",
 ]
 
 [workspace.dependencies]
